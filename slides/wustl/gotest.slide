@@ -1,0 +1,305 @@
+Google API Demo
+Go, AppEngine, Cloud Endpoints, Google Cloud Messaging
+
+Paul Carleton
+pcarleton@google
+BS/MS Computer Science 2013
+
+
+* AppEngine
+
+.image apidemo/appengine_logo.png 500 _
+.caption [[https://developers.google.com/appengine/]]
+
+* Go
+
+.image apidemo/gopherbw.png 500 _
+.caption [[http://tour.golang.org][tour.golang.org]]
+
+* AppEngine + Go
+
+.image apidemo/aegopher.jpg 500 _
+.caption [[https://developers.google.com/appengine/docs/go/gettingstarted/introduction][Hello world tutorial]]
+
+
+* Cloud Endpoints
+
+.image apidemo/cloud_endpoints_logo.png 500 _
+.caption [[https://developers.google.com/appengine/docs/java/endpoints/]]
+
+
+* Google Cloud Messaging
+
+.image apidemo/gcm.png 250 _
+.caption [[https://developer.android.com/google/gcm/index.html]]
+
+* Overview
+
+.image apidemo/overview.png 500 _
+
+
+* Server - Methods
+
+TODO add github link
+
+.link https://github.com
+  // Empty struct to attach our endpoint methods to.
+  type MessengerService struct {
+  }
+
+  // Message just wraps a string in a struct.  We could add other fields here if we wanted.
+  type Message struct {
+    Content string
+  }
+
+  // Echo repeats the message you send back to you.
+  func (ms *MessengerService) Echo(r *http.Request, m *Message, resp *Message) error {
+    resp.Content = "Recieved message: " + m.Content
+    return nil
+  }
+
+
+* Quick Demo
+
+.play apidemo/service-short.go /func main/,
+
+* Server
+  package messenger
+  import (...)
+
+  func registerCloudEndpoints() {
+    // Create instance of our service
+    service := &MessengerService{}
+
+    // Register our service as an endpoint service
+    api, err := endpoints.RegisterService(service, "messenger", "v1", "Messenger API", true)
+    if err != nil {
+       panic(err.Error())
+    }
+
+    // Register Echo method
+    info := api.MethodByName("Echo").Info()
+    info.Name, info.HttpMethod, info.Path, info.Desc =
+    	       "Echo", "POST", "Echo", "Echoes your message."
+    // Start handling requests
+    endpoints.HandleHttp()
+  }
+
+  func init() {
+    registerCloudEndpoints()
+  }
+
+* Server - app.yaml
+ application: wustl-hack-2014
+ version: auto
+ runtime: go
+ api_version: go1
+ handlers:
+
+ # Cloud endpoints
+ - url: /_ah/spi/.*
+   script: _go_app
+
+* Create Project
+
+Create an AppEngine App
+
+.link http://cloud.google.com/console
+
+.image apidemo/console.png
+
+
+* Test and deploy
+ 
+ // Run locally
+ goapp serve
+
+ // Deploy to server
+ goapp deploy
+
+Check it out!
+
+.link https://wustl-hack-2014.appspot.com/_ah/api/explorer
+
+* Docs
+
+
+Go AppEngine SDK
+
+.link https://developers.google.com/appengine/docs/go/
+
+Cloud Endpoints (Java)
+
+.link https://developers.google.com/appengine/docs/java/endpoints/
+
+Cloud Endpoints (Go - unofficial)
+
+.link https://github.com/crhym3/go-endpoints
+
+
+* Google Cloud Messaging
+
+* Google Cloud Messaging
+
+GCM = Push Notifications
+
+* Enable GCM
+
+.image apidemo/enablegcm.png
+
+
+* Get a Server API Key
+
+.image apidemo/apikey.png
+
+
+* Android Client - Register with GCM
+
+    // registerWithGCM contacts the GCM server and logs the ID it receives.
+    public void registerWithGCM(){
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected String doInBackground(Void... params) {
+                String msg = "";
+                try {
+                    if (gcm == null) {
+                        gcm = GoogleCloudMessaging.getInstance(getApplicationContext());
+                    }
+                    String regid = gcm.register(PROJECT_NUMBER);
+                    // In reality, we would want to send this to the server so it can reach us.
+                    // For the sake of simplicity for this demo, we'll just copy and paste it from
+                    // the logs.
+                    msg = "Device registered, registration ID=" + regid;
+                    Log.i("GCM", msg);
+                } catch (IOException ex) {
+                    msg = "Error :" + ex.getMessage();
+                }
+                return msg;
+            }
+        }.execute(null, null, null);
+    }
+
+
+* Android Client - GCMBroadcastReceiver
+
+ // GcmB
+ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
+     @Override
+     public void onReceive(Context context, Intent intent) {
+         Bundle extras = intent.getExtras();
+         Intent RTReturn = new Intent(MainActivity.RECEIVE_MESSAGE);
+         RTReturn.putExtra("message", extras.getString("message"));
+         LocalBroadcastManager.getInstance(context).sendBroadcast(RTReturn);
+         setResultCode(Activity.RESULT_OK);
+     }
+ }
+
+
+* Android Client - Broadcast Receiver
+
+    // Set up a broadcast receiver
+    private BroadcastReceiver bReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals(RECEIVE_MESSAGE)) {
+                String message = intent.getStringExtra("message");
+                messageView.setText(message);
+            }
+        }
+    };
+
+
+* Android Client - onCreate()
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        messageView = (TextView) findViewById(R.id.messageView);
+
+	// Tell GCM we want to receive messages.
+        registerWithGCM();
+
+	// Tell our local broadcast manager we want to receive messages and handle
+	// them with our 'bReceiver'.
+        LocalBroadcastManager bManager = LocalBroadcastManager.getInstance(this);
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(RECEIVE_MESSAGE);
+        bManager.registerReceiver(bReceiver, intentFilter);
+    }
+
+* Android Client is ready to receive messages
+
+Now we have to send some.
+
+
+* Back to the server...
+
+
+* AppEngine - Some new structs
+
+.code apidemo/service.go /type Message /,/^}/
+
+.code apidemo/service.go /type GCMMsg/,/^}/
+
+* AppEngine - Send Method
+
+.code apidemo/service.go /func .*Send/,/^}/
+
+* AppEngine - New registerCloudEndpoints
+
+.code apidemo/service.go /func register/,/^}/
+
+
+* Try it out!
+
+.link https://wustl-hack-2014.appspot.com/_ah/api/explorer
+
+RegID:
+
+  APA91bGcNDhRk_S2TcdU-iuKF5E7r1RWXm76if-VLM3WwtG8hBMflLYbHnVWomjcYxosSBxo7t1ILssdqoVZa_5RbHPbuR4hA3Yv20CVVCm4EOQGKxSaJGwhL8W6-AsXBjy3jr_UGTTG2mL0bsKwnOhXpoeVG_gaycZmLuMLlaJmCW7TPeUgPEE
+
+
+
+* Improvements/Extensions
+
+.image apidemo/overview.png
+
+
+* Improvements/Extensions
+
+- No more copy and paste.
+
+- Talk to Endpoints from Android
+
+- Broadcast to multiple devices
+
+- Implement real browser client
+
+- Make methods do something useful
+
+- iOS client
+
+- Could even rewrite server in another language (Python, Java, PHP)
+
+* Appendix
+
+* Appendix - Server Functions
+
+.code apidemo/service.go /func createRequest/,/^}/
+
+* Appendix - Server Functions
+
+.code apidemo/service.go /func encodeMsg/,/^}/
+
+
+.code apidemo/service.go /func createGCMMsg/,/^}/
+
+* Appendix - AppEngine vs. Heroku
+
+- Tough call, similar offerings
+
+- Heroku Better integration with relational DB
+
+- AppEngine, better integration with the rest of Google
