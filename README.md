@@ -4,7 +4,7 @@ wustl-hack-2014
 API Demos for the Hackathon at WUSTL
 
 Live backend here:
-https://wustl-hack-2014.appspot.com/_ah/api/explore
+https://wustl-hack-2014.appspot.com/_ah/api/explorer
 
 Slides visible here:
 https://wustl-hack-slides.appspot.com/wustl/demo.slide
