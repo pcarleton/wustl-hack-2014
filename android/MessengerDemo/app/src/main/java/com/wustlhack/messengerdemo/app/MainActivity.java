@@ -73,8 +73,11 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         messageView = (TextView) findViewById(R.id.messageView);
 
+	// Tell GCM we want to receive messages.
         registerWithGCM();
 
+	// Tell our local broadcast manager we want to receive messages and handle
+	// them with our 'bReceiver'.
         LocalBroadcastManager bManager = LocalBroadcastManager.getInstance(this);
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(RECEIVE_MESSAGE);

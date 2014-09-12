@@ -10,6 +10,8 @@ import android.util.Log;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
+// GcmBroadcastReceiver receives the broadcast from Google Play
+// Services and forwards it to a local broadcast manager.
 public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
