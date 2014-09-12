@@ -1,0 +1,9 @@
+application: wustl-hack-2014
+version: auto
+runtime: go
+api_version: go1
+handlers:
+
+# Cloud endpoints
+- url: /_ah/spi/.*
+  script: _go_app
