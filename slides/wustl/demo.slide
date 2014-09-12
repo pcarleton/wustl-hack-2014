@@ -2,8 +2,48 @@ Google API Demo
 Go, AppEngine, Cloud Endpoints, Google Cloud Messaging
 
 Paul Carleton
-pcarleton@google
 BS/MS Computer Science 2013
+pcarleton@google.com
+
+* Links
+
+Code and link to slides available at:
+
+.link https://github.com/pcarleton/wustl-hack-2014
+
+* Goals
+- Achieve simple functionality
+- Use several Google API's
+- Provide starting point or point of reference
+
+* Non-Goals
+
+- Be comprehensive
+- Demonstrate best practices
+
+* Roadmap
+
+1. Introduce APIs
+2. Initial server - Echo
+3. Android App
+3. Extend Server - Send messages
+4. Demo
+5. Q&A
+
+
+* Roadmap
+
+*1.*Introduce*APIs*
+2. Initial server - Echo
+3. Android App
+3. Extend Server - Send messages
+4. Demo
+5. Q&A
+
+* Overview
+
+.image apidemo/overview.png 500 _
+.caption [[https://github.com/pcarleton/wustl-hack-2014]]
 
 
 * AppEngine
@@ -33,37 +73,53 @@ BS/MS Computer Science 2013
 .image apidemo/gcm.png 250 _
 .caption [[https://developer.android.com/google/gcm/index.html]]
 
-* Overview
 
-.image apidemo/overview.png 500 _
+* Roadmap
+
+1. Introduce APIs
+*2.*Initial*server*-*Echo*
+3. Android App
+3. Extend Server - Send messages
+4. Demo
+5. Q&A
 
 
-* Server - Methods
+* Server
 
-TODO add github link
+- Message
+- Service with Method
+- Register as a handler
+- Configure and deploy
 
-.link https://github.com
-  // Empty struct to attach our endpoint methods to.
-  type MessengerService struct {
-  }
+.link https://github.com/pcarleton/wustl-hack-2014
+
+* Server - Message
 
   // Message just wraps a string in a struct.  We could add other fields here if we wanted.
   type Message struct {
     Content string
   }
 
+
+* Server - Service
+
+  // Empty struct to attach our endpoint methods to.
+  type MessengerService struct {
+  }
+
   // Echo repeats the message you send back to you.
-  func (ms *MessengerService) Echo(r *http.Request, m *Message, resp *Message) error {
+  func (*MessengerService) Echo(r *http.Request, m *Message, resp *Message) error {
     resp.Content = "Recieved message: " + m.Content
     return nil
   }
 
 
-* Quick Demo
+* Service in Action
 
 .play apidemo/service-short.go /func main/,
 
-* Server
+* Server - Register
+
   package messenger
   import (...)
 
@@ -89,7 +145,10 @@ TODO add github link
     registerCloudEndpoints()
   }
 
-* Server - app.yaml
+* Server - Configure
+
+app.yaml
+
  application: wustl-hack-2014
  version: auto
  runtime: go
@@ -100,19 +159,18 @@ TODO add github link
  - url: /_ah/spi/.*
    script: _go_app
 
-* Create Project
+Use `goapp`serve` to run locally
+
+* Server - Deploy
 
 Create an AppEngine App
 
 .link http://cloud.google.com/console
 
-.image apidemo/console.png
+.image apidemo/console.png 400 _
 
 
-* Test and deploy
- 
- // Run locally
- goapp serve
+* Server - Deploy
 
  // Deploy to server
  goapp deploy
@@ -121,37 +179,23 @@ Check it out!
 
 .link https://wustl-hack-2014.appspot.com/_ah/api/explorer
 
-* Docs
+* Roadmap
 
+1. Introduce APIs
+2. Initial server - Echo
+*3.*Android*App*
+3. Extend Server - Send messages
+4. Demo
+5. Q&A
 
-Go AppEngine SDK
+* Android Client
 
-.link https://developers.google.com/appengine/docs/go/
+1. Start with vanilla Android Studio Setup
+2. Register with GCM and save Registration ID
+3. Listen for GCM Messages  
+4. Make change using message
 
-Cloud Endpoints (Java)
-
-.link https://developers.google.com/appengine/docs/java/endpoints/
-
-Cloud Endpoints (Go - unofficial)
-
-.link https://github.com/crhym3/go-endpoints
-
-
-* Google Cloud Messaging
-
-* Google Cloud Messaging
-
-GCM = Push Notifications
-
-* Enable GCM
-
-.image apidemo/enablegcm.png
-
-
-* Get a Server API Key
-
-.image apidemo/apikey.png
-
+* Brace yourself, ugly Java ahead
 
 * Android Client - Register with GCM
 
@@ -180,9 +224,8 @@ GCM = Push Notifications
     }
 
 
-* Android Client - GCMBroadcastReceiver
+* Android Client - Listen
 
- // GcmB
  public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
      @Override
      public void onReceive(Context context, Intent intent) {
@@ -194,8 +237,18 @@ GCM = Push Notifications
      }
  }
 
+AndroidManifest.xml
 
-* Android Client - Broadcast Receiver
+    <receiver
+        android:name=".GcmBroadcastReceiver"
+        android:permission="com.google.android.c2dm.permission.SEND" >
+        <intent-filter>
+            <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+            <category android:name="com.google.apps.examples.roshambo.android.gcm" />
+        </intent-filter>
+    </receiver>
+
+* Android Client - Use the data
 
     // Set up a broadcast receiver
     private BroadcastReceiver bReceiver = new BroadcastReceiver() {
@@ -209,8 +262,7 @@ GCM = Push Notifications
     };
 
 
-* Android Client - onCreate()
-
+* Android Client - Putting it together
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -218,11 +270,11 @@ GCM = Push Notifications
         setContentView(R.layout.activity_main);
         messageView = (TextView) findViewById(R.id.messageView);
 
-	// Tell GCM we want to receive messages.
+        // Tell GCM we want to receive messages.
         registerWithGCM();
 
-	// Tell our local broadcast manager we want to receive messages and handle
-	// them with our 'bReceiver'.
+        // Tell our local broadcast manager we want to receive messages and handle
+        // them with our 'bReceiver'.
         LocalBroadcastManager bManager = LocalBroadcastManager.getInstance(this);
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(RECEIVE_MESSAGE);
@@ -233,8 +285,26 @@ GCM = Push Notifications
 
 Now we have to send some.
 
+* Roadmap
+
+1. Introduce APIs
+2. Initial server - Echo
+3. Android App
+*3.*Extend*Server*-*Send*messages*
+4. Demo
+5. Q&A
+
 
 * Back to the server...
+
+* Enable GCM
+
+.image apidemo/enablegcm.png 400 _
+
+
+* Get a Server API Key
+
+.image apidemo/apikey.png 500 _
 
 
 * AppEngine - Some new structs
@@ -261,7 +331,6 @@ RegID:
   APA91bGcNDhRk_S2TcdU-iuKF5E7r1RWXm76if-VLM3WwtG8hBMflLYbHnVWomjcYxosSBxo7t1ILssdqoVZa_5RbHPbuR4hA3Yv20CVVCm4EOQGKxSaJGwhL8W6-AsXBjy3jr_UGTTG2mL0bsKwnOhXpoeVG_gaycZmLuMLlaJmCW7TPeUgPEE
 
 
-
 * Improvements/Extensions
 
 .image apidemo/overview.png
@@ -282,6 +351,8 @@ RegID:
 - iOS client
 
 - Could even rewrite server in another language (Python, Java, PHP)
+
+* Q&A
 
 * Appendix
 
